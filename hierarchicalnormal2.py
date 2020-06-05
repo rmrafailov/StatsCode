@@ -170,9 +170,13 @@ def WAIC(y, years, Mus, Thetas, Sigmas, Taus):
     
     SL = np.zeros((1000, np.prod(y.shape)))
     
+    theta_bayes = np.zeros_like(Thetas[0,0,:])
+    mu_bayes = 0
+    sigma_bayes = 0
+    
     for i_s in range(1000):
         m = np.random.choice(10)
-        n = np.random.choice(250)
+        n = np.random.randint(100,250)
         
         theta = Thetas[n,m,:]
         mu   = Mus[n,m]         
@@ -181,13 +185,27 @@ def WAIC(y, years, Mus, Thetas, Sigmas, Taus):
         ll = log_likelihood(y, years, theta, mu, sigma)
         SL[i_s,:] = ll.ravel()
         
+        theta_bayes = theta_bayes + theta
+        mu_bayes = mu_bayes + mu
+        sigma_bayes = sigma_bayes + sigma
+        
+    theta_bayes = theta_bayes/1000
+    mu_bayes = mu_bayes/1000
+    sigma_bayes = sigma_bayes/1000
+        
+    logl = np.sum(log_likelihood(y, years, theta_bayes, mu_bayes, sigma_bayes))
+    pDIC1 = 2 * np.var(np.sum(SL, axis = -1))
+    pDIC2 = 2 * (logl - np.mean(np.sum(SL, axis = -1)))
+    DIC = -2 * (logl - pDIC2)                      
+                          
+                          
     lppd = np.sum(np.log(np.mean(np.exp(SL), axis = 0)))
     
     pWAIC1 = 2 * (np.sum(np.log(np.mean(np.exp(SL), axis = 0))) - np.sum(np.mean(SL, axis = 0)))
     pWAIC2 = np.sum(np.var(SL, axis = 0))
+    WAIC = -2 * (lppd - pWAIC2)
         
-        
-    return -2 * (lppd - pWAIC2)    
+    return logl, pDIC1, pDIC2, DIC, lppd, pWAIC1, pWAIC2, WAIC   
         
 
 model = HNM(np.array([2005, 2006, 2007, 2008, 2009]), y)
@@ -195,5 +213,25 @@ llpd2 = CV(model.samples, years[-2:], y)
 
 model = HNM(np.array([2005, 2006, 2007, 2008, 2009, 2010, 2011]), y)
 Mus, Thetas, Sigmas, Taus = model.samples
-WAIC(y, years, Mus, Thetas, Sigmas, Taus)
+logl, pDIC1, pDIC2, DIC, lppd, pWAIC1, pWAIC2, WAIC  = WAIC(y, years, Mus, Thetas, Sigmas, Taus)
 
+
+model = HNM(np.array([2005, 2006, 2007]), y)
+llpd2007 = CV(model.samples, years[-4:], y)
+
+
+model = HNM(np.array([2005, 2006, 2007, 2008]), y)
+llpd2008 = CV(model.samples, years[-3:], y)
+
+
+model = HNM(np.array([2005, 2006, 2007, 2008, 2009]), y)
+llpd2009 = CV(model.samples, years[-2:], y)
+
+
+model = HNM(np.array([2005, 2006, 2007, 2008, 2009, 2010]), y)
+llpd2010 = CV(model.samples, years[-1:], y)
+
+
+
+model = HNM(np.array([2005, 2006, 2007, 2008, 2009]), y)
+llpd2 = CV(model.samples, years[-2:], y)

@@ -174,7 +174,7 @@ taus = np.mean(Taucs)
 tau = np.mean(Taus)
 
 
-Ys = np.zeros((6, 32, 10000))
+Ys = np.zeros((6, 32, 100))
 def sample_dataset(mus, thetas, sigma, tauc, tau, nsamps = 100):
     for it in range(nsamps):
         k1 = np.random.choice(range(100, 250))
@@ -188,7 +188,7 @@ def sample_dataset(mus, thetas, sigma, tauc, tau, nsamps = 100):
         
         for i in range(1, 7):
             for j in range(32):
-                Ys[i-1,j,it] = st.norm.rvs(loc = mus[i] + thetas[j], scale = sigma)
+                Ys[i-1,j,it] = max(st.norm.rvs(loc = mus[i] + thetas[j], scale = sigma), 0)
 
 for i in range(len(years)-1):
 
@@ -439,6 +439,30 @@ data['Rhat'] = Rhats
 data['neff'] = neffs
 df = pd.DataFrame (data, columns = ['Params', 'q025', 'q250', 'q500', 'q750', 'q975', 'Rhat', 'neff'])
 df.to_csv('params.csv')
+
+
+
+plt.boxplot(Mus[:,0,1:], labels = [2006, 2007, 2008, 2009, 2010, 2011])
+plt.xlabel('Year')
+plt.ylabel('Value')
+plt.title('Posterior latent distribution by year')
+plt.savefig('crime_progression_by_year.png')
+
+
+for j in range(10):
+    for k in range(100, 150):
+        plt.plot(Mus[k,j,:])
+
+
+
+
+
+
+
+
+
+
+
 
 
 def WAIC(Mus, Thetas, Sigmas, Taucs, Taus):
